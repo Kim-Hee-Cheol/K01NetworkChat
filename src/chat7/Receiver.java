@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.URLDecoder;
 
 public class Receiver extends Thread {
 	
@@ -17,7 +18,7 @@ public class Receiver extends Thread {
 		//서버가 보내는 메세지를 읽어오는 역할을 한다.
 		try {
 			in = new BufferedReader(new
-				InputStreamReader(this.socket.getInputStream()));	
+				InputStreamReader(this.socket.getInputStream(),"UTF-8"));	
 		}
 		catch(Exception e) {
 			System.out.println("예외>Receiver>생성자:"+ e);
@@ -32,7 +33,7 @@ public class Receiver extends Thread {
 		//소켓이 종료되면 while()문을 벗어나서 input스트림을 종료한다.
 		while(in !=null) {
 			try {
-				System.out.println("Thread Receive :"+ in.readLine());
+				System.out.println(">>" + URLDecoder.decode(in.readLine(),"UTF-8"));
 			}
 			catch(SocketException ne) {
 				System.out.println("SocketException 발생됨");

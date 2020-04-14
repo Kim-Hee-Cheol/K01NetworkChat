@@ -2,6 +2,7 @@ package chat7;
 
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.URLEncoder;
 import java.util.Scanner;
 
 //클라이언트가 입력한 메세지를 서버로 전송해주는 쓰레드 클래스
@@ -28,7 +29,7 @@ public class Sender extends Thread {
 		Scanner s = new Scanner(System.in);
 		try {
 			//클라이언트가 입력한 "대화명"을 서버로 전송한다.
-			out.println(name);
+			out.println(URLEncoder.encode(name,"UTF-8"));
 			
 			//Q를 입력하기전까지 메세지를 서버로 전송한다.
 			while(out !=null) {
@@ -39,7 +40,7 @@ public class Sender extends Thread {
 					}
 					else {
 						//만약Q(q)가 아니면 서버로 입력내용 전송
-						out.println(s2);
+						out.println(URLEncoder.encode(s2,"UTF-8"));
 					}
 				}
 				catch(Exception e) {

@@ -14,7 +14,7 @@ public class MultiClient {
 		
 		//Sender가 기능을 가져가므로 여기서는 필요없음
 		//PrintWriter out = null;
-		//Receiver 가 기능을 가져가므로 여기서는 필요없음
+		//Receiver가 기능을 가져가므로 여기서는 필요없음
 		//BufferedReader in = null;
 		
 		try {
@@ -41,12 +41,15 @@ public class MultiClient {
 			//클라이언트의 메세지를 서버로 전송해주는 쓰레드 생성
 			Thread sender = new Sender(socket, s_name);
 			sender.start();
+			
+			
 					
 		}
 		catch(Exception e) {
 			System.out.println("예외발생[MultiClient]" + e);
 		}
 	}
+	
 
 }
 

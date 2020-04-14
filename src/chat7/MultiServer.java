@@ -5,13 +5,29 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 public class MultiServer {
-
+	
+	PreparedStatement psmt;
+	Connection con;
+	Statement stmt;
+	ResultSet rs;
+	
 	static ServerSocket serverSocket = null;
 	static Socket socket = null;
 	//클라이언트 정보 저장을 위한 Map컬렉션 정의
@@ -22,7 +38,43 @@ public class MultiServer {
 		clientMap= new HashMap<String, PrintWriter>();
 		//HashMap동기화 설정. 쓰레드가 사용자정보에 동시에 접근하는것을 차단한다.
 		Collections.synchronizedMap(clientMap);
+		
+		try {
+			Class.forName("oracle.jdbc.OracleDriver");
+			con = DriverManager.getConnection
+					("jdbc:oracle:thin://@localhost:1521:orcl", 
+							"kosmo","1234"
+					);
+			System.out.println("오라클 DB 연결성공");
+
+			
+		}
+		catch (ClassNotFoundException e) {
+			System.out.println("오라클 드라이버 로딩 실패");
+			e.printStackTrace();
+		}
+		catch (SQLException e) {
+			System.out.println("DB 연결 실패");
+			e.printStackTrace();
+		}
+		catch (Exception e) {
+			System.out.println("알수 없는 예외 발생");
+		}
 	}
+	
+	public void close() {
+		try {
+			if(psmt != null) psmt.close();
+			if(stmt != null) stmt.close();
+			if(con != null) con.close();
+			if(rs != null) rs.close();
+         
+		}
+		catch(SQLException e) {
+			System.out.println("자원 반납 시 오류가 발생하였습니다.");
+		}
+	}////end of close
+	
 	
 	//서버의 초기화
 	public void init() {
@@ -76,6 +128,7 @@ public class MultiServer {
 		
 		//저장된 객체(클라이언트)의 갯수만큼 반복한다.
 		while(it.hasNext()) {
+			
 			try {
 				//각 클라이언트의 PrintWriter객체를 얻어온다.
 				PrintWriter it_out =
@@ -87,10 +140,12 @@ public class MultiServer {
 				없는 경우에는 메세지만 클라이언트로 전송한다.
 				 */
 				if(name.equals("")) {
-					it_out.println(msg);
+					it_out.println(URLEncoder.encode(msg,"UTF-8"));
 				}
+				
 				else {
 					it_out.println("["+ name +"]:"+ msg);
+
 				}
 			}
 			catch(Exception e) {
@@ -98,6 +153,32 @@ public class MultiServer {
 			}
 		}
 	}
+	public String showUserList(String name) {
+		StringBuffer sb = new StringBuffer("==접속자목록==\r\n");
+		Iterator<String> it = clientMap.keySet().iterator();
+		
+		while(it.hasNext()) {
+			try {
+				String key = (String)it.next();
+				
+				if(key.equals(name)) {
+					key += "";
+				}
+				sb.append(key+"\r\n");
+			}
+			catch(Exception e) {
+				System.out.println("예외:"+e);
+			}
+		}
+		sb.append("=="+clientMap.size()+"명 접속중==\r\n");
+		return sb.toString();
+	}
+	
+	public String showUserList() {
+		return showUserList("");
+	}
+	
+	
 	//내부클래스
 	class MultiServerT extends Thread {
 		
@@ -112,7 +193,7 @@ public class MultiServer {
 				out = new PrintWriter(this.socket.getOutputStream(), true);
 				//클라이언트가 보내주는 메세지를 읽을 준비(input스트림)
 				in = new BufferedReader(new InputStreamReader
-						(this.socket.getInputStream()));
+						(this.socket.getInputStream(),"UTF-8"));
 			}
 			catch(Exception e){
 				System.out.println("예외:"+ e);
@@ -120,7 +201,6 @@ public class MultiServer {
 		}
 		@Override
 		public void run() {
-			
 			//클라이언트로부터 전송된 "대화명"을 저장할 변수
 			String name ="";
 			//메세지 저장용 변수
@@ -129,12 +209,12 @@ public class MultiServer {
 			try {
 				//클라이언트의 이름을 읽어와서 저장
 				name = in.readLine();
-				
+				name = URLDecoder.decode(name,"UTF-8");
 				//접속한 클라이언트에게 새로운 사용자의 입장을 알림.
 				//접속자를 제외한 나머지 클라이언트만 입장메세지를 받는다.
 				sendAllMsg("", name + "님이 입장하셨습니다.");
 				
-				//현재 접속한 클라이언트를 HashMap에 저장한다.
+				//현재 접속한 접속자를 HashMap에 저장한다.
 				clientMap.put(name,out);
 				
 				//HashMap에 저장된 객체의 수로 접속자 수를 파악할 수 있다.
@@ -145,15 +225,49 @@ public class MultiServer {
 				//입력한 메세지는 모든 클라이언트에게 Echo된다.
 				while(in !=null) {
 					s = in.readLine();
+					s = URLDecoder.decode(s,"UTF-8");
 					if(s==null) break;
 					
-					System.out.println(name +" >> " + s);
-					sendAllMsg(name,s);
+					if(s.startsWith("/")) {
+						if(s.trim().equals("/list")) {
+							out.println(showUserList());
+						}
+						else if(){
+							
+						}
+						else {
+							out.println("잘못된 명령어입니다.");
+						}
+					}
+					else {
+						sendAllMsg(name,s);
+					}
 					
+					try {
+					    String query = "INSERT INTO chating_tb VALUES "
+			                       + "(seq_chat.NEXTVAL, ?, ?, ?)";
+			            psmt = con.prepareStatement(query);
+			            //클라이언트의 이름을 읽어와서 저장
+			            psmt.setString(1, name);
+			            psmt.setString(2, s);
+			            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			            Date time = new Date();
+			            String nowdate = format.format(time);
+			            psmt.setString(3, nowdate);
+			            psmt.executeUpdate();
+			            System.out.println(s);
+			            
+			            System.out.println(name +" >> " + s);
+						
+					}
+					catch(Exception e) {
+						System.out.println("DB저장 실패");
+						e.printStackTrace();
+					}
 				}
 			}
 			catch(Exception e) {
-				System.out.println("예외:"+ e);
+				
 			}
 			finally {
 				/*
@@ -178,13 +292,3 @@ public class MultiServer {
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-

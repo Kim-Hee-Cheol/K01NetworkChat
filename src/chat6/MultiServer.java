@@ -5,26 +5,13 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 public class MultiServer {
-	
-	PreparedStatement psmt;
-	Connection con;
-	Statement stmt;
-	ResultSet rs;
-	
+
 	static ServerSocket serverSocket = null;
 	static Socket socket = null;
 	//클라이언트 정보 저장을 위한 Map컬렉션 정의
@@ -35,43 +22,7 @@ public class MultiServer {
 		clientMap= new HashMap<String, PrintWriter>();
 		//HashMap동기화 설정. 쓰레드가 사용자정보에 동시에 접근하는것을 차단한다.
 		Collections.synchronizedMap(clientMap);
-		
-		try {
-			Class.forName("oracle.jdbc.OracleDriver");
-			con = DriverManager.getConnection
-					("jdbc:oracle:thin://@localhost:1521:orcl", 
-							"kosmo","1234"
-					);
-			System.out.println("오라클 DB 연결성공");
-
-			
-		}
-		catch (ClassNotFoundException e) {
-			System.out.println("오라클 드라이버 로딩 실패");
-			e.printStackTrace();
-		}
-		catch (SQLException e) {
-			System.out.println("DB 연결 실패");
-			e.printStackTrace();
-		}
-		catch (Exception e) {
-			System.out.println("알수 없는 예외 발생");
-		}
 	}
-	
-	public void close() {
-		try {
-			if(psmt != null) psmt.close();
-			if(stmt != null) stmt.close();
-			if(con != null) con.close();
-			if(rs != null) rs.close();
-         
-		}
-		catch(SQLException e) {
-			System.out.println("자원 반납 시 오류가 발생하였습니다.");
-		}
-	}////end of close
-	
 	
 	//서버의 초기화
 	public void init() {
@@ -140,9 +91,6 @@ public class MultiServer {
 				}
 				else {
 					it_out.println("["+ name +"]:"+ msg);
-					Calendar calendar = Calendar.getInstance();
-					java.util.Date date = calendar.getTime();
-					String today = (new SimpleDateFormat("H:mm:ss").format(date));
 				}
 			}
 			catch(Exception e) {
@@ -230,13 +178,3 @@ public class MultiServer {
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
