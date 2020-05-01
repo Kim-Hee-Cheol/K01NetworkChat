@@ -87,17 +87,17 @@ public class MultiServer {
          
          /*
          1명의 클라이언트가 접속할 때마다 접속을 허용(accept())해주고
-         동시에 MultiServerT 쓰레드를 생성한다.
-         해당 쓰레드는 1명의 클라이언트가 전송하는 메세지를 읽어서
-         Echo해주는 역할을 담당한다.
-          */
+		동시에 MultiServerT 쓰레드를 생성한다.
+		해당 쓰레드는 1명의 클라이언트가 전송하는 메세지를 읽어서
+		Echo해주는 역할을 담당한다.
+         */
          while(true) {
             socket = serverSocket.accept();
             System.out.println(socket.getInetAddress() +":"+
             socket.getPort());
             /*
-            클라이언트의 메세지를 모든 클라이언트에게 전달하기 위한
-            쓰레드 생성 및 start
+			클라이언트의 메세지를 모든 클라이언트에게 전달하기 위한
+			쓰레드 생성 및 start
              */
             Thread mst = new MultiServerT(socket);
             mst.start();
@@ -137,8 +137,8 @@ public class MultiServer {
             
             //클라이언트에게 메세지를 전달한다.
             /*
-            매개변수 name이 있는 경우에는 이름+메세지
-            없는 경우에는 메세지만 클라이언트로 전송한다.
+			매개변수 name이 있는 경우에는 이름+메세지
+			없는 경우에는 메세지만 클라이언트로 전송한다.
              */
             if(name.equals("")) {
                it_out.println(URLEncoder.encode(msg,"UTF-8"));
